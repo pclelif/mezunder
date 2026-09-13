@@ -341,6 +341,8 @@ export function EventJsonLd({
   location,
   url,
   imageUrl,
+  performerName,
+  price = "0",
 }: {
   title: string;
   description: string;
@@ -349,14 +351,20 @@ export function EventJsonLd({
   location?: string | null;
   url: string;
   imageUrl?: string | null;
+  performerName?: string | null;
+  price?: string | null;
 }) {
+  const fullUrl = url.startsWith("http") ? url : `${siteUrl}${url}`;
+  const effectiveStartDate = startDate || undefined;
+  const effectiveEndDate = endDate || startDate || undefined;
+
   const schema = {
     "@context": "https://schema.org",
     "@type": "Event",
     name: title,
     description: description,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
+    ...(effectiveStartDate ? { startDate: effectiveStartDate } : {}),
+    ...(effectiveEndDate ? { endDate: effectiveEndDate } : {}),
     eventStatus: "https://schema.org/EventScheduled",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     location: {
@@ -370,9 +378,24 @@ export function EventJsonLd({
     },
     image: imageUrl ? (imageUrl.startsWith("http") ? imageUrl : `${siteUrl}${imageUrl}`) : `${siteUrl}/images/og-image.jpg?v=15`,
     organizer: {
-      "@id": `${siteUrl}/#organization`,
+      "@type": "Organization",
+      name: associationName,
+      url: siteUrl,
     },
-    url: url.startsWith("http") ? url : `${siteUrl}${url}`,
+    performer: {
+      "@type": "Organization",
+      name: performerName || associationName,
+      url: siteUrl,
+    },
+    offers: {
+      "@type": "Offer",
+      price: price || "0",
+      priceCurrency: "TRY",
+      availability: "https://schema.org/InStock",
+      url: fullUrl,
+      validFrom: effectiveStartDate,
+    },
+    url: fullUrl,
   };
 
   return (
